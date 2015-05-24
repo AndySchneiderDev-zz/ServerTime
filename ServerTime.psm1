@@ -19,7 +19,7 @@ Function Set-TimeServer
     )
     Try 
         {
-            $result = Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name ntpServer -Value $TimeServer
+            Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name ntpServer -Value $TimeServer
         }
 
     Catch 
@@ -42,7 +42,7 @@ Function Set-TimeServerConfiguration
     if     ($AnnounceFlags = 'WindowsDefault')     {$flag = 5}
     elseif ($AnnounceFlags = 'ReliableTimeServer') {$flag = 10 }
 
-    $result = Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Config -Name AnnounceFlags -Value $flag
+    Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Config -Name AnnounceFlags -Value $flag
 
 }
 
@@ -50,6 +50,7 @@ Function Get-TimeServerConfiguration
 {
 
     $flags = (get-itemproperty HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Config -Name AnnounceFlags).AnnounceFlags
+    $flags
 
 }
 
@@ -132,32 +133,4 @@ Function Get-NetworkTime
                     }
     }
 }
-
-enum Ensure
-{
-  Absent
-  Present
-}
-
-[DscResource()]
-class TimeServer
-{
- 
-  [DscProperty(Key)]
-  [string]$TimeServer
-
-  [void]Set()
-  {
-  }
-
-  [bool]Test()
-  {
-    return $false
-  }
-
-  [TimeServer]Get()
-  {
-    return $this
-  }
- }
 
