@@ -1,5 +1,4 @@
-﻿Set-StrictMode -Verbose -Version 5
-
+﻿
 Function Get-TimeServer 
 {
 
