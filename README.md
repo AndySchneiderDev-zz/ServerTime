@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/6vtc1ht4r6hrsl2q/branch/master?svg=true)](https://ci.appveyor.com/project/AndyPowerShell/servertime/branch/master)
+
 # ServerTime
 A PowerShell Module to manage time configuration
 
