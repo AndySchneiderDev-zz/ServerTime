@@ -1,3 +1,5 @@
+os: unstable
+
 install:
     - cinst -y pester
 

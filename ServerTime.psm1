@@ -3,7 +3,7 @@ Function Get-TimeServer
 {
 
   $timeservers = (get-itemproperty HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name ntpServer).NtpServer
-  @($timeservers -split ' ')
+  return @($timeservers -split ' ')
 
 }
 
