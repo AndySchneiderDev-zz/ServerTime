@@ -1,9 +1,24 @@
-﻿
+﻿Function Set-W32TimeServer
+{
+param($TimeServer)
+
+Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\VMICTimeProvider -Name Enabled -Value 0
+w32tm.exe /config /manualpeerlist:`"$TimeServer`" /syncfromflags:manual /reliable:yes /update
+Restart-Service W32Time
+$result = w32tm.exe /resync /force
+}
+
+Function Get-W32TimeServer
+{
+$result = w32tm.exe /query /source
+return $result.trim()
+}
+
 Function Get-TimeServer 
 {
 
   $timeservers = (get-itemproperty HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name ntpServer).NtpServer
-  return @($timeservers -split ' ')
+  return $timeservers.Trim()
 
 }
 
@@ -19,6 +34,7 @@ Function Set-TimeServer
     Try 
         {
             Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name ntpServer -Value $TimeServer
+            Restart-service W32Time
         }
 
     Catch 
