@@ -1,77 +1,62 @@
-﻿Function Set-W32TimeServer
+﻿Function Set-TimeServer
 {
-param($TimeServer)
+<#
+.Synopsis
+   Sets the NTP server on a server. 
 
-Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\VMICTimeProvider -Name Enabled -Value 0
-w32tm.exe /config /manualpeerlist:`"$TimeServer`" /syncfromflags:manual /reliable:yes /update
-Restart-Service W32Time
-$result = w32tm.exe /resync /force
+.Description
+   Set-TimeServer sets the NTP server on a server. It is typically used on the PDC Emulator
+
+.Example
+   Set-TimeServer -TimeServer time.windows.com
+
+.Example
+   "time.windows.com" | Set-TimeServer 
+
+#>
+[CmdletBinding(SupportsShouldProcess,
+               ConfirmImpact='High')]
+param(
+[string[]]
+$TimeServer
+)
+  # flatten the array to a string, if there is more than one entry
+  $servers = [string]$TimeServer
+
+  # Need to add a check for Hyper-V here.. otherwise, we don't need to set this key
+  $ConfirmationMessage = "NTP Server Setting"
+  $Caption = "Updating NTP Server to $servers"
+    
+  if ($PSCmdlet.ShouldProcess($ConfirmationMessage,$Caption))
+  {
+    Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\VMICTimeProvider -Name Enabled -Value 0
+    w32tm.exe /config /manualpeerlist:`"$servers`" /syncfromflags:manual /reliable:yes /update
+    Restart-Service W32Time
+    $result = w32tm.exe /resync /force
 }
-
-Function Get-W32TimeServer
-{
-$result = w32tm.exe /query /source
-return $result.trim()
-}
-
-Function Get-TimeServer 
-{
-
-  $timeservers = (get-itemproperty HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name ntpServer).NtpServer
-  return $timeservers.Trim()
-
-}
-
-
-Function Set-TimeServer 
-{
-    param(
-        [Parameter(Mandatory)]
-        [Alias("Server")]
-        [Alias("NTPServer")]
-        $TimeServer
-    )
-    Try 
-        {
-            Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name ntpServer -Value $TimeServer
-            Restart-service W32Time
-        }
-
-    Catch 
-        {
-            # To DO
-        }
-}
-
-Function Set-TimeServerConfiguration 
-{
-    param
-    (
-        [Parameter(Mandatory)]
-        [ValidateSet('WindowsDefault','ReliableTimeServer')]
-        
-        [Alias("Flags")]
-        $AnnounceFlags
-    )
-
-    if     ($AnnounceFlags = 'WindowsDefault')     {$flag = 5}
-    elseif ($AnnounceFlags = 'ReliableTimeServer') {$flag = 10 }
-
-    Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Config -Name AnnounceFlags -Value $flag
+  
 
 }
 
-Function Get-TimeServerConfiguration 
+Function Get-TimeServer
 {
+<#
+.Synopsis
+   Gets the current time server 
 
-    $flags = (get-itemproperty HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Config -Name AnnounceFlags).AnnounceFlags
-    $flags
+.Description
+   Gets the current time server
 
+.Example
+    Get-TimeServer
+#>
+  $result = w32tm.exe /query /source
+  return $result.trim()
 }
-
 
 Function Update-Endianness 
 {
+
   param(
     [UInt64]
     $n
@@ -88,7 +73,24 @@ Function Update-Endianness
 
 Function Get-NetworkTime 
 {
-    param
+ <#
+.Synopsis
+   Query's an NTP Server 
+
+.Description
+   Builds an NTP request and sends it via a socket to an NTP Server and gets a response.
+   This code was translated from C# from this page on Stackoverflow -
+   http://stackoverflow.com/questions/1193955/how-to-query-an-ntp-server-using-c
+
+.Example
+   Get-NetworkTime -NTPServer time.windows.com | fl 
+
+  NTPServer   : time.windows.com
+  Time        : 5/26/2015 2:09:17 AM
+  Miliseconds : 3641594957172.46
+
+#>
+param
     (
     [Parameter(Mandatory,
                ValueFromPipeline,
